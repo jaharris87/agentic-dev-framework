@@ -59,6 +59,14 @@ When setting up test infrastructure, the project may need different test categor
 | **Symmetry tests** | Verify invariants hold (e.g., f(A,B) = -f(B,A)) | Any project with symmetry properties |
 | **MPI/parallel tests** | Verify correct behavior across process counts | Parallel codes |
 
+### First-time setup guidance
+
+If the user hasn't set up Claude Code before, guide them through:
+
+1. Copy `templates/global-settings-example.json` to `~/.claude/settings.json`
+2. Install the security hook: copy `templates/hooks/security-precheck.py` to `~/.claude/hooks/security-precheck.py` and `chmod +x` it. The hook is a `PreToolUse` defense-in-depth layer that hard-blocks dangerous patterns (pipe-to-shell, credential exfiltration, eval, sensitive path access) on every tool call.
+3. Verify it's working by starting a new `claude` session — the hook runs silently on every tool call
+
 ## Files in This Repo
 
 ```
@@ -75,10 +83,11 @@ templates/                      # Copied into new projects
 │       └── red-team-review.md  # Red team review prompt
 ├── .claude/
 │   └── settings.json           # Project permissions template
+├── hooks/
+│   └── security-precheck.py    # PreToolUse hook (install to ~/.claude/hooks/)
 └── global-settings-example.json  # ~/.claude/settings.json reference
 
 scripts/
 ├── init-project.sh             # Copy templates into a new project
-├── create-labels.sh            # Create GitHub review labels
-└── security-precheck.py        # Validate Claude Code security settings
+└── create-labels.sh            # Create GitHub review labels
 ```

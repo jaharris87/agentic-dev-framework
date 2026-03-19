@@ -111,6 +111,19 @@
       "Bash(rm *)"
     ]
   },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/security-precheck.py"
+          }
+        ]
+      }
+    ]
+  },
   "env": {
     "CLAUDE_SANDBOX": "true"
   }

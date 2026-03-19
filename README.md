@@ -108,19 +108,26 @@ Key principles:
 - **`deny`**: Destructive operations that should never happen without manual intervention.
 - **`ask`**: Operations that change shared state (git push, PR creation, file deletion). **Always keep `git push` in `ask`.** Authorization for one push does not carry forward to the next.
 
-### Security precheck
+### Security hook (defense-in-depth)
 
-Run the security precheck script to validate your configuration:
-
-```bash
-python3 scripts/security-precheck.py
-```
-
-This checks that dangerous operations are denied, sensitive operations require approval, and common secret file patterns are gitignored. Run it again on any new project with `--project-dir`:
+The global settings example includes a `PreToolUse` hook that hard-blocks dangerous patterns on every tool call, as defense-in-depth behind the deny list. Install it:
 
 ```bash
-python3 scripts/security-precheck.py --project-dir /path/to/your-project
+mkdir -p ~/.claude/hooks
+cp templates/hooks/security-precheck.py ~/.claude/hooks/security-precheck.py
+chmod +x ~/.claude/hooks/security-precheck.py
 ```
+
+This hook catches things the deny list can't express, including:
+- Pipe-to-shell patterns (`curl ... | bash`)
+- Credential exfiltration via network tools
+- Recursive deletion of critical directories (`~/.ssh`, `~/.gnupg`)
+- Base64 + network tool combinations
+- `eval`/`exec`, `awk` shell escapes, `find -exec`
+- Read/Edit/Write access to sensitive paths (`.env`, `.ssh`, `.pem`, etc.)
+
+The hook is registered in `global-settings-example.json` under the `hooks` key. It runs automatically on every `PreToolUse` event — exit code 0 allows the operation, exit code 2 hard-blocks it.
+
 
 ## Manual Setup
 
@@ -257,12 +264,13 @@ templates/
 │       └── red-team-review.md             # Red team review prompt
 ├── .claude/
 │   └── settings.json                      # Project permissions template
+├── hooks/
+│   └── security-precheck.py               # PreToolUse hook (defense-in-depth)
 └── global-settings-example.json           # ~/.claude/settings.json reference
 
 scripts/
 ├── init-project.sh                        # Copy templates into a new project
-├── create-labels.sh                       # Create GitHub review labels
-└── security-precheck.py                   # Validate Claude Code security settings
+└── create-labels.sh                       # Create GitHub review labels
 ```
 
 ## Lessons Learned
