@@ -1,0 +1,39 @@
+{
+  "$schema": "https://claude.ai/code/settings-schema.json",
+  "cleanupPeriodDays": 14,
+  "permissions": {
+    "allow": [
+      "Bash(git status *)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git branch *)",
+      "Bash(git checkout *)",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(grep *)",
+      "Bash(make *)",
+      "Bash(python *)",
+      "Bash(uv *)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(sudo *)",
+      "Bash(curl *)",
+      "Bash(wget *)",
+      "Bash(git reset --hard *)",
+      "Bash(git push --force *)",
+      "Bash(docker *)",
+      "Bash(kill *)"
+    ],
+    "ask": [
+      "WebFetch",
+      "WebSearch",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)"
+    ]
+  },
+  "env": {
+    "CLAUDE_SANDBOX": "true"
+  }
+}

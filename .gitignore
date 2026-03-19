@@ -1,0 +1,12 @@
+# OS
+.DS_Store
+
+# Editor
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Claude Code (only at root, not inside templates/)
+/.claude/

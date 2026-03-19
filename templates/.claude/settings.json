@@ -1,0 +1,12 @@
+{
+  "$schema": "https://claude.ai/code/settings-schema.json",
+  "permissions": {
+    "allow": [
+      "WebSearch"
+      // Add project-specific permissions here, e.g.:
+      // "Bash(uv run *)",
+      // "Bash(gh issue *)",
+      // "WebFetch(your-api-domain.com)"
+    ]
+  }
+}
