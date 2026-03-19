@@ -22,8 +22,8 @@ TEMPLATES_DIR="$FRAMEWORK_DIR/templates"
 TARGET_DIR="${1:?Usage: $0 /path/to/target-project}"
 
 if [ ! -d "$TARGET_DIR" ]; then
-  echo "Error: $TARGET_DIR does not exist. Create it first."
-  exit 1
+  mkdir -p "$TARGET_DIR"
+  echo "Created $TARGET_DIR"
 fi
 
 echo "Copying framework templates to $TARGET_DIR..."
@@ -46,10 +46,11 @@ copy_if_missing() {
   fi
 }
 
-# Find all template files and copy them (exclude global-settings-example.json)
+# Find all template files and copy them (exclude global-settings-example.json and hooks/)
+# hooks/ belongs at ~/.claude/hooks/, not in individual projects
 while IFS= read -r -d '' file; do
   copy_if_missing "$file"
-done < <(find "$TEMPLATES_DIR" -type f -not -name "global-settings-example.json" -print0)
+done < <(find "$TEMPLATES_DIR" -type f -not -name "global-settings-example.json" -not -path "*/hooks/*" -print0)
 
 # Create standard directories if they don't exist
 for dir in fixtures tests; do
@@ -58,6 +59,16 @@ for dir in fixtures tests; do
     echo "  MKDIR: $dir/"
   fi
 done
+
+# Check that the global security hook is installed
+if [ ! -f "$HOME/.claude/hooks/security-precheck.py" ]; then
+  echo ""
+  echo "WARNING: Security hook not found at ~/.claude/hooks/security-precheck.py"
+  echo "  Install it with:"
+  echo "    mkdir -p ~/.claude/hooks"
+  echo "    cp $FRAMEWORK_DIR/templates/hooks/security-precheck.py ~/.claude/hooks/security-precheck.py"
+  echo "    chmod +x ~/.claude/hooks/security-precheck.py"
+fi
 
 echo ""
 echo "Done. Next steps:"

@@ -50,6 +50,22 @@ This file provides context to Codex when reviewing code in this repository.
 
 {{ARCHITECTURE_QUICK_NOTES}}
 
+## Keeping This File Current
+
+<!-- AGENTS.md is written at project creation but must evolve with the project.
+     Stale risk documentation is worse than none — it directs reviewer attention
+     to the wrong places.
+
+     Update this file:
+     - After each major feature: new components introduce new failure modes
+     - After review cycles where findings were consistently wrong or irrelevant
+     - At each project milestone: reassess which risks are still load-bearing
+     - After real bugs: add the failure mode that was missed
+
+     Remove risks that are no longer relevant (e.g., a data pipeline risk after
+     the pipeline was replaced). Add new risks from recent bugs or review findings.
+-->
+
 ## Review Standards
 
 When reviewing PRs in this repo:

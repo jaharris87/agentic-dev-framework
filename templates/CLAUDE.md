@@ -88,6 +88,10 @@ For **every finding** in every Codex review, post a reply comment on the PR resp
 
 Group your responses into a single comment per review. Every finding must be addressed — do not silently skip any.
 
+### Merge-blocking criteria
+
+Do not merge the PR if any finding classified as **bug**, **leakage**, or **silent wrong answer** remains unaddressed (neither fixed nor disagreed-with-evidence). Findings classified as **nit**, **design concern**, or **methodology concern** do not block merge unless escalated by the user.
+
 ### Step 4: Report to the user
 
 After responding to all reviews, give the user a concise summary:
@@ -95,6 +99,7 @@ After responding to all reviews, give the user a concise summary:
 - What you agreed and fixed
 - What you disagreed with and why
 - What you deferred
+- Whether any merge-blocking findings remain
 
 ## Configuration
 

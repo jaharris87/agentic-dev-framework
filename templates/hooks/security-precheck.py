@@ -23,18 +23,32 @@ Install:
 """
 
 import json
+import os
 import re
 import sys
+from datetime import datetime, timezone
 
 
-def block(reason: str) -> None:
-    """Print a block reason and exit with code 2 (hard block)."""
+AUDIT_LOG = os.path.expanduser("~/.claude/security-audit.log")
+
+
+def block(reason: str, tool_name: str = "", command: str = "") -> None:
+    """Print a block reason, log it, and exit with code 2 (hard block)."""
     print(f"BLOCKED: {reason}", file=sys.stderr)
+    try:
+        with open(AUDIT_LOG, "a") as f:
+            ts = datetime.now(timezone.utc).isoformat()
+            f.write(f"{ts}\ttool={tool_name}\treason={reason}\tcmd={command}\n")
+    except OSError:
+        pass  # Don't fail the hook if logging fails
     sys.exit(2)
 
 
 def check_bash(cmd: str) -> None:
     """Check a Bash command for dangerous patterns."""
+
+    def _block(reason: str) -> None:
+        block(reason, tool_name="Bash", command=cmd[:200])
 
     # 1. Pipe-to-shell patterns
     #    Catches: bash, sh, zsh, dash, ksh, csh, python, perl, ruby, node
@@ -47,20 +61,20 @@ def check_bash(cmd: str) -> None:
         r'|\|\s*node\b',
         cmd,
     ):
-        block("Pipe-to-shell pattern detected")
+        _block("Pipe-to-shell pattern detected")
 
     # 2. Dangerous flags
     if re.search(
         r'--dangerously-skip-permissions|--no-verify.*push|--force.*push',
         cmd,
     ):
-        block("Dangerous flag detected")
+        _block("Dangerous flag detected")
 
     # 3. Credential exfiltration via network tools
     if re.search(r'(curl|wget|nc\b|ncat)\s', cmd, re.IGNORECASE) and re.search(
         r'(_KEY|_TOKEN|_SECRET|_PASSWORD|API_KEY|PRIVATE)', cmd, re.IGNORECASE
     ):
-        block("Possible credential exfiltration via network tool")
+        _block("Possible credential exfiltration via network tool")
 
     # 4. Recursive deletion of critical directories
     if re.search(
@@ -68,25 +82,25 @@ def check_bash(cmd: str) -> None:
         r'(/?$|~/?$|/\s|~/?\s|/home\b|~?/?\.ssh|~?/?\.gnupg|~?/?\.claude)',
         cmd,
     ):
-        block("Recursive deletion of critical directory")
+        _block("Recursive deletion of critical directory")
 
     # 5. Base64 + network tool (exfiltration technique)
     if re.search(
         r'base64.*?(curl|wget|nc\b)|((curl|wget|nc\b).*?base64)', cmd
     ):
-        block("Base64 encoding combined with network tool")
+        _block("Base64 encoding combined with network tool")
 
     # 6. awk with system() or getline from pipe — shell escape
     if re.search(r'\bawk\b', cmd) and re.search(
         r'system\s*\(|getline\s*<|"/.*\|', cmd
     ):
-        block("awk command contains shell escape (system/getline)")
+        _block("awk command contains shell escape (system/getline)")
 
     # 7. find with -exec or -delete — arbitrary execution/deletion
     if re.search(r'\bfind\b', cmd) and re.search(
         r'-exec\b|-execdir\b|-delete\b', cmd
     ):
-        block("find command contains -exec or -delete")
+        _block("find command contains -exec or -delete")
 
     # 8. Python with dangerous imports or function calls
     if re.search(r'\bpython[23]?\b', cmd):
@@ -95,16 +109,19 @@ def check_bash(cmd: str) -> None:
             r'|os\.system|shutil\.copy|ftplib|smtplib|paramiko)'
         )
         if re.search(dangerous_imports, cmd):
-            block("Python command contains dangerous import")
+            _block("Python command contains dangerous import")
 
         dangerous_calls = (
             r'os\.system\(|subprocess\.(run|call|Popen|check_output)\('
             r'|socket\.socket\('
         )
         if re.search(dangerous_calls, cmd):
-            block("Python command contains dangerous function call")
+            _block("Python command contains dangerous function call")
 
     # 9. echo/printf with file redirection
+    #    NOTE: echo and printf are allowed in global settings for terminal output,
+    #    but the hook intentionally blocks file redirection (echo "x" > file.txt).
+    #    This is defense-in-depth: use the Write tool for file creation instead.
     if re.search(r'\b(echo|printf)\b', cmd):
         if re.search(
             r'[>]{1,2}\s*~?/?\.('
@@ -112,11 +129,11 @@ def check_bash(cmd: str) -> None:
             r'|netrc|npmrc|pypirc|aws)',
             cmd,
         ):
-            block("echo/printf with redirection to sensitive path")
+            _block("echo/printf with redirection to sensitive path")
         # Allow /dev/null — just suppresses output
         if not re.search(r'[>]{1,2}\s*/dev/null', cmd):
             if re.search(r'[>]{1,2}\s*[^\s]', cmd):
-                block("echo/printf with file redirection — use the Write tool instead")
+                _block("echo/printf with file redirection — use the Write tool instead")
 
     # 10. tee — always writes to files
     if re.search(r'\btee\b', cmd):
@@ -125,19 +142,19 @@ def check_bash(cmd: str) -> None:
             r'|netrc|npmrc|pypirc|aws)',
             cmd,
         ):
-            block("tee writing to sensitive path")
+            _block("tee writing to sensitive path")
         if re.search(r'\btee\s+(-[a-zA-Z]\s+)*[^\s|]', cmd):
-            block("tee writes to files — use the Write tool instead")
+            _block("tee writes to files — use the Write tool instead")
 
     # 11. Subshell containing network tools
     if re.search(r'(\$\(|`)\s*(curl|wget|nc\b|ncat)', cmd):
-        block("Subshell containing network tool")
+        _block("Subshell containing network tool")
 
     # 12. eval / exec (common injection vectors)
     if re.search(r'\beval\s', cmd):
-        block("eval command detected")
+        _block("eval command detected")
     if re.search(r'\bexec\s+[^-]', cmd):
-        block("exec command detected")
+        _block("exec command detected")
 
 
 # Sensitive path patterns used by Read/Edit/Write checks
@@ -183,7 +200,8 @@ def check_file_access(tool_name: str, tool_input: dict) -> None:
 
     for pattern in SENSITIVE_PATH_PATTERNS:
         if re.search(pattern, filepath, re.IGNORECASE):
-            block(f"{tool_name} access to sensitive path: {filepath}")
+            block(f"{tool_name} access to sensitive path: {filepath}",
+                  tool_name=tool_name, command=filepath)
 
 
 def main() -> None:

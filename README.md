@@ -16,9 +16,9 @@ Every PR gets multi-perspective adversarial review, and the builder agent is req
 
 **Start a `claude` session from this directory** and describe the project you want to create. Claude will:
 
-1. Create the project directory and initialize it
-2. Copy the template scaffolding via `scripts/init-project.sh`
-3. Fill in all placeholders based on your project requirements
+1. Ask structured clarifying questions (language, domain, test categories, risks, architecture)
+2. Create the project directory and copy the template scaffolding
+3. Fill in all placeholders based on your confirmed requirements
 4. Customize CI, review prompts, and settings for your language/domain
 5. Initialize git, create the GitHub repo, create labels, and push
 6. Guide you through any manual steps (PAT creation, repo secret)
@@ -125,8 +125,11 @@ This hook catches things the deny list can't express, including:
 - Base64 + network tool combinations
 - `eval`/`exec`, `awk` shell escapes, `find -exec`
 - Read/Edit/Write access to sensitive paths (`.env`, `.ssh`, `.pem`, etc.)
+- `echo`/`printf` with file redirection (use the Write tool instead)
 
-The hook is registered in `global-settings-example.json` under the `hooks` key. It runs automatically on every `PreToolUse` event — exit code 0 allows the operation, exit code 2 hard-blocks it.
+The hook is registered in `global-settings-example.json` under the `hooks` key. It runs automatically on every `PreToolUse` event — exit code 0 allows the operation, exit code 2 hard-blocks it. Blocked events are logged to `~/.claude/security-audit.log` for post-hoc review.
+
+**Note on echo/printf:** Global settings `allow` both `echo *` and `printf *` for terminal output, but the security hook intentionally blocks file redirection (`echo "x" > file.txt`). This is by design — use the Write tool for file creation, which provides better auditability.
 
 
 ## Manual Setup
@@ -221,6 +224,33 @@ Claude Code follows the TDD cycle when instructed via CLAUDE.md. The key is maki
 
 **The forced rebuttal (step 4) is not optional.** It prevents reviews from becoming decorative.
 
+## Claude Code Collaboration Features
+
+The builder-reviewer loop is one half of the workflow. The other half is the **human-AI collaboration loop** — how you work with Claude Code across sessions.
+
+### Memory system
+
+Claude Code persists context across sessions in `~/.claude/projects/*/memory/`. Use memory for:
+- **Architectural decisions** — why a design was chosen (not just what)
+- **User preferences** — coding style, review strictness, domain expertise level
+- **Risk discoveries** — failure modes found during development or review
+
+Use CLAUDE.md for build commands, workflow instructions, and anything every session needs immediately. Memory is for context that's useful but not essential at session start.
+
+### Session continuity
+
+| Feature | When to use |
+|---------|-------------|
+| `claude --continue` | Resume the most recent session with full context |
+| `/compact` | Compress conversation history when approaching context limits |
+| Worktrees | Isolated git worktrees for parallel work on multiple features |
+| Plan mode (`/plan`) | Align on approach before complex implementations |
+| `claude --print` | Non-interactive mode for scripted automation |
+
+### Context window management
+
+Keep CLAUDE.md lean. If it exceeds ~200 lines, move reference material (API docs, data dictionaries, environment setup) to separate files that Claude can read on demand. CLAUDE.md loads at every session start — everything in it costs context on every interaction.
+
 ## Extending the Framework
 
 ### Adding a new review type
@@ -241,9 +271,19 @@ Claude Code follows the TDD cycle when instructed via CLAUDE.md. The key is maki
 | **Parallel Correctness** | Race conditions, decomposition assumptions, communication patterns, load balance | MPI/threaded codes |
 | **Experiment Planning** | Next experiments, ablation plans, baseline comparisons, stopping rules | Research projects |
 
+### Keeping AGENTS.md current
+
+AGENTS.md is written at project creation but must evolve. Stale risk documentation directs reviewer attention to the wrong places. Update it:
+- **After each major feature**: New components introduce new failure modes.
+- **After review cycles where findings were consistently wrong**: The risk profile has drifted.
+- **At project milestones**: Reassess which risks are still load-bearing.
+- **After real bugs**: Add the failure mode that was missed.
+
+Remove risks that are no longer relevant. A risk about a data pipeline that was replaced is noise.
+
 ### Making reviews effective
 
-1. **Give reviews authority to block.** Define blocking conditions in CLAUDE.md.
+1. **Give reviews authority to block.** Define blocking conditions in CLAUDE.md (the template includes merge-blocking criteria).
 2. **Require code citations.** Every finding must name a file, function, or test gap.
 3. **Reward important flaws, not volume.** The prompts cap nits at 3.
 
@@ -283,7 +323,7 @@ Non-obvious things discovered through iteration:
 
 3. **`ready_for_review` doesn't fire on non-draft PR creation.** Use `labeled` as the sole trigger and always apply labels.
 
-4. **CLAUDE.md is loaded at conversation start.** Existing sessions won't see mid-conversation updates. Start a new session after CLAUDE.md changes.
+4. **CLAUDE.md is loaded at conversation start.** Existing sessions won't see mid-conversation updates. Start a new session after CLAUDE.md changes. Use `--continue` to resume a previous session, `/compact` to manage long sessions.
 
 5. **Forced rebuttal is the most important part.** Without it, reviews become decorative. The builder agent must respond to every finding.
 

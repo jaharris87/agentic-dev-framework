@@ -10,13 +10,21 @@ This file provides guidance to Claude Code when working in this repository.
 
 The primary use case: a user starts a `claude` session from this directory and asks you to create a new project. Your job is to:
 
-1. **Understand the user's project requirements** from their prompt.
+1. **Gather requirements** — Before generating any files, confirm the following with the user. Do not proceed until you have clear answers for items a–f. Items g–h can be inferred or defaulted.
+   - a. **Language & toolchain**: Language(s), build system, package manager, linter/formatter
+   - b. **Domain**: What kind of project? (general software, scientific computing, ML/data science, financial modeling, web service, CLI tool, library, simulation/HPC, etc.)
+   - c. **Test categories**: Which of the 9 categories apply? (unit, integration, regression, performance, verification, validation, conservation, symmetry, MPI)
+   - d. **Methodology review**: Is domain methodology review applicable? If so, what are the core methodological concerns? (See the domain customization hints below.)
+   - e. **Key risks**: What are 3–5 specific ways this project could fail silently? (These become AGENTS.md content.)
+   - f. **Architecture**: Major components, data flow, external dependencies
+   - g. **Deployment target**: Local workstation, HPC cluster, cloud, embedded, CI-only (default: local)
+   - h. **GitHub setup**: Org/user, repo name, public/private, any existing repo to use
 2. **Create the project directory** at the location they specify (or ask where).
 3. **Run `scripts/init-project.sh`** to copy the template scaffolding.
-4. **Fill in all `{{PLACEHOLDER}}` values** in CLAUDE.md and AGENTS.md based on the project requirements.
+4. **Fill in all `{{PLACEHOLDER}}` values** in CLAUDE.md and AGENTS.md based on the gathered requirements.
 5. **Customize the CI workflow** (`.github/workflows/ci.yml`) for the project's language and toolchain.
-6. **Customize the review prompts** (`.github/prompts/`) for the project's domain.
-7. **Set up `.claude/settings.json`** with project-specific permissions.
+6. **Customize the review prompts** (`.github/prompts/`) for the project's domain. Use the methodology customization hints below.
+7. **Set up `.claude/settings.json`** with project-specific permissions (see the inheritance note in the template).
 8. **Initialize git**, create the GitHub repo, create labels, and push.
 9. **Guide the user** through any manual steps (PAT creation, repo secret).
 
@@ -25,7 +33,8 @@ The primary use case: a user starts a `claude` session from this directory and a
 - **CLAUDE.md**: Write it as if you are the future Claude Code agent that will work on this project. Include exact build/test/lint commands, architecture description, and the full PR review workflow. The Development Workflow and PR Review Workflow sections are already filled in with the standard process — customize paths for label triggers.
 - **AGENTS.md**: Write project-specific risks that Codex should focus on. Generic risks are useless. Think about: what are the ways THIS project could fail silently?
 - **CI workflow**: Replace the placeholder steps with the project's actual toolchain. This could be Python + uv, CMake + CTest, Make + Fortran compilers, npm + jest, cargo + clippy — whatever the project uses.
-- **Review prompts**: The software and red-team prompts are mostly universal. The methodology prompt should be customized for the project's domain (ML, scientific computing, financial modeling, etc.) or removed if not applicable.
+- **Review prompts**: The software and red-team prompts are mostly universal. The methodology prompt should be customized for the project's domain using the hints below, or removed if not applicable.
+- **`.claude/settings.json`**: Project-level settings layer on top of global settings (`~/.claude/settings.json`). Only add permissions specific to this project's toolchain — global permissions (git, ls, common tools) are already inherited. For example, a Python project might add `"Bash(pytest *)"` and `"Bash(ruff *)"`. A Rust project might add `"Bash(cargo test *)"`. The template starts with just `WebSearch`; expand it based on the project's language and build tools.
 
 ### Language/toolchain patterns
 
@@ -42,6 +51,22 @@ When setting up CI for different ecosystems:
 | Node.js | `npm ci` | `eslint` / `prettier --check` | `tsc --noEmit` | `jest` / `vitest` |
 | Rust | `cargo build` | `cargo clippy` / `cargo fmt --check` | (compiler) | `cargo test` |
 | Go | `go build ./...` | `golangci-lint run` / `gofmt -d` | (compiler) | `go test ./...` |
+
+### Methodology prompt customization by domain
+
+When customizing `.github/prompts/methodology-review.md`, replace the ML-focused Required Questions and What to Look For sections with domain-appropriate concerns:
+
+| Domain | Replace ML Questions With |
+|--------|--------------------------|
+| **Scientific computing** | Convergence order verification, stability conditions (CFL, von Neumann), conservation properties (mass, energy, momentum), manufactured solution tests, boundary condition consistency with interior scheme, floating-point reproducibility |
+| **Simulation / HPC** | Parallel decomposition correctness, load balance assumptions, communication pattern validity (halo exchange, reductions), floating-point reproducibility across rank counts, weak/strong scaling behavior |
+| **Financial modeling** | Risk measure validity (VaR, CVaR assumptions), backtesting methodology (walk-forward vs. in-sample), regime sensitivity, tail risk coverage, mark-to-market assumptions, look-ahead bias |
+| **Web services / APIs** | Rate limiting correctness, idempotency guarantees, auth boundary correctness, data consistency under concurrent access, graceful degradation, cache invalidation |
+| **ML / Data science** | (Default template is already appropriate — data leakage, evaluation validity, baseline strength, calibration contamination) |
+| **CLI tools / Libraries** | API contract stability, backwards compatibility, edge case handling in public interfaces, error message clarity, platform-specific behavior differences |
+| **Embedded / Real-time** | Timing guarantees, memory allocation patterns (heap vs. stack), interrupt safety, watchdog handling, power state transitions, peripheral initialization ordering |
+
+For domains not listed, identify the 5–7 ways the project's core methodology could silently produce wrong results and structure the prompt around those.
 
 ### Testing patterns by domain
 
@@ -66,6 +91,18 @@ If the user hasn't set up Claude Code before, guide them through:
 1. Copy `templates/global-settings-example.json` to `~/.claude/settings.json`
 2. Install the security hook: copy `templates/hooks/security-precheck.py` to `~/.claude/hooks/security-precheck.py` and `chmod +x` it. The hook is a `PreToolUse` defense-in-depth layer that hard-blocks dangerous patterns (pipe-to-shell, credential exfiltration, eval, sensitive path access) on every tool call.
 3. Verify it's working by starting a new `claude` session — the hook runs silently on every tool call
+
+### Claude Code collaboration features
+
+When filling in the template CLAUDE.md, consider including guidance for these Claude Code features that support multi-session development:
+
+- **Memory system** (`~/.claude/projects/*/memory/`): Persists context across sessions. Use memory for architectural decisions, user preferences, and risk discoveries. Use CLAUDE.md for build commands, workflow instructions, and anything every session needs.
+- **Plan mode**: Use before complex features to align on approach before implementation. Invoke with `/plan` or the EnterPlanMode tool.
+- **`--continue`**: Resumes the most recent session with full context. Essential for multi-session work.
+- **`/compact`**: Compresses conversation history when approaching context limits. Important for long implementation sessions.
+- **Worktrees**: Isolated git worktrees for parallel work streams. Useful when the builder needs to work on multiple features simultaneously.
+- **`claude --print`**: Non-interactive mode for scripted automation (e.g., pre-commit checks, CI integration).
+- **Context window management**: Keep CLAUDE.md lean — move reference material to separate files that Claude can read on demand rather than loading at every session start. If CLAUDE.md exceeds ~200 lines, consider splitting into `CLAUDE.md` (essentials) + `docs/` (reference).
 
 ## Files in This Repo
 
