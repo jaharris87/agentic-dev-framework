@@ -7,12 +7,12 @@
 # This copies template files into the target directory, preserving the
 # directory structure. It does NOT overwrite existing files.
 #
-# After running this script:
-#   1. Fill in the {{PLACEHOLDER}} values in CLAUDE.md and AGENTS.md
-#   2. Customize .github/prompts/ for your domain
-#   3. Run ./scripts/create-labels.sh to create GitHub labels
-#   4. Create a fine-grained PAT and add it as CODEX_TRIGGER_PAT secret
-#   5. Review and adjust .claude/settings.json for your project
+# Intended to be run by Claude Code during project bootstrapping, or
+# manually as the first setup step.
+#
+# After running this script, fill in the {{PLACEHOLDER}} values in
+# CLAUDE.md and AGENTS.md, then customize the CI workflow and review
+# prompts for your project's language and domain.
 
 set -euo pipefail
 
@@ -46,13 +46,13 @@ copy_if_missing() {
   fi
 }
 
-# Find all template files and copy them
+# Find all template files and copy them (exclude global-settings-example.json)
 while IFS= read -r -d '' file; do
   copy_if_missing "$file"
 done < <(find "$TEMPLATES_DIR" -type f -not -name "global-settings-example.json" -print0)
 
 # Create standard directories if they don't exist
-for dir in fixtures tests src; do
+for dir in fixtures tests; do
   if [ ! -d "$TARGET_DIR/$dir" ]; then
     mkdir -p "$TARGET_DIR/$dir"
     echo "  MKDIR: $dir/"
@@ -63,11 +63,11 @@ echo ""
 echo "Done. Next steps:"
 echo ""
 echo "  1. Fill in {{PLACEHOLDER}} values in CLAUDE.md and AGENTS.md"
-echo "  2. Customize .github/prompts/ for your project's domain"
-echo "  3. Adjust .claude/settings.json permissions"
-echo "  4. Create a fine-grained PAT (GitHub Settings > Developer settings > Fine-grained tokens)"
+echo "  2. Customize .github/workflows/ci.yml for your toolchain"
+echo "  3. Customize .github/prompts/ for your project's domain"
+echo "  4. Adjust .claude/settings.json permissions"
+echo "  5. Create a fine-grained PAT (GitHub Settings > Developer settings > Fine-grained tokens)"
 echo "     - Scope: pull-requests:write on your repo"
 echo "     - Add as repo secret: CODEX_TRIGGER_PAT"
-echo "  5. Run: $SCRIPT_DIR/create-labels.sh"
-echo "  6. Review global-settings-example.json and apply to ~/.claude/settings.json"
+echo "  6. Run: $SCRIPT_DIR/create-labels.sh"
 echo ""

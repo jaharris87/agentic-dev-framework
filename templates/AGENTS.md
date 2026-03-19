@@ -10,7 +10,20 @@ This file provides context to Codex when reviewing code in this repository.
 
 <!-- Organize risks by priority. These guide Codex to focus on what actually
      matters rather than producing generic review fluff. Be specific about
-     the failure modes that are unique to YOUR project. -->
+     the failure modes that are unique to YOUR project.
+
+     Examples of good, specific risks:
+     - "Name normalization between three data sources can silently produce
+       zero-valued features instead of raising errors"
+     - "Isotonic calibration fit on training data is a silent bug that
+       inflates reported accuracy"
+     - "MPI rank ordering in the halo exchange assumes contiguous block
+       decomposition — non-contiguous layouts will silently corrupt ghost cells"
+
+     Examples of bad, generic risks:
+     - "Don't introduce bugs"
+     - "Make sure tests pass"
+-->
 
 ### {{RISK_CATEGORY_1}} (highest priority)
 
@@ -25,9 +38,9 @@ This file provides context to Codex when reviewing code in this repository.
 
 ### Code Quality Risks
 
-- **Tests must not hit the network**: All external-facing tests use fixtures in `fixtures/`. A test that makes HTTP calls is a bug.
-- **Mocking skepticism**: Heavily mocked tests can pass while the real system fails. Prefer integration tests with fixture data over unit tests with mocks.
-- **Docs drift**: `CLAUDE.md`, CLI `--help` text, and README must match the actual implementation. Discrepancies are real bugs.
+- **Docs drift**: `CLAUDE.md`, README, and any user-facing help text must match the actual implementation. Discrepancies are real bugs.
+- **Test skepticism**: Ask whether tests actually exercise the behavior they claim to test. Tests that pass trivially or mock away the interesting logic are worse than no tests — they provide false confidence.
+- **Silent fallbacks**: Any code path that substitutes a default value for missing data should be flagged. Silent fallbacks can mask real errors and produce plausible-looking but wrong output.
 
 ## Architecture Quick Reference
 
@@ -43,7 +56,7 @@ When reviewing PRs in this repo:
 
 1. **Anchor findings in code**: Cite specific files, functions, and line numbers. Do not make vague claims.
 2. **Prioritize correctness over style**: A real bug matters more than a missing docstring.
-3. **Be skeptical of tests**: Ask whether the test actually exercises the behavior it claims to test, especially if it uses heavy mocking.
-4. **Verify docs match implementation**: If the PR changes behavior, check that CLAUDE.md, CLI help, and any relevant comments are updated.
+3. **Be skeptical of tests**: Ask whether the test actually exercises the behavior it claims to test.
+4. **Verify docs match implementation**: If the PR changes behavior, check that CLAUDE.md, README, and any relevant comments are updated.
 5. **Prefer fewer, more serious findings**: Two real concerns are worth more than twenty style nits.
 6. **Begin your response with the review type heading** (`## Software Review`, `## Methodology Review`, or `## Red Team Review`) so it is clear which review you are responding to.

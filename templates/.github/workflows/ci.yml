@@ -12,36 +12,39 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Replace the jobs below with your project's actual build/test/lint toolchain.
+# The structure (lint → typecheck → test as independent parallel jobs) is
+# intentional — it gives fast feedback on the most common failure modes.
+#
+# Examples for common ecosystems:
+#
+#   Python + uv:      uv sync --dev → ruff check/format → mypy → pytest
+#   C++ + CMake:      cmake -B build → cmake --build build → clang-tidy → ctest
+#   Fortran + CMake:  cmake -B build → cmake --build build → fprettify --diff → ctest
+#   Fortran + fpm:    fpm build → fprettify --diff → fpm test
+#   Rust:             cargo build → cargo clippy / cargo fmt --check → cargo test
+#   Node.js:          npm ci → eslint / prettier --check → tsc --noEmit → jest
+#   Go:               go build → golangci-lint → go test ./...
+
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      # TODO: Add your toolchain setup and build steps
+      # - uses: ...
+      # - run: ...
+
   lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      # {{SETUP_STEPS}} — replace with your language/toolchain setup
-      # Example for Python + uv:
-      - uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: false
-      - run: uv sync --frozen --dev
-      - run: uv run ruff check src/ tests/
-      - run: uv run ruff format --check src/ tests/
-
-  typecheck:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: false
-      - run: uv sync --frozen --dev
-      - run: uv run mypy src/
+      # TODO: Add your linter and formatter checks
+      # - run: ...
 
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: false
-      - run: uv sync --frozen --dev
-      - run: uv run pytest -m "not slow" --tb=short -q
+      # TODO: Add your test runner
+      # - run: ...
