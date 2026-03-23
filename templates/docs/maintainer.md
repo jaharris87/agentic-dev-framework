@@ -62,6 +62,26 @@ Group responses into a single comment per review. Every finding must be addresse
 - **design concern**
 - **methodology concern**
 
+### Fallback review procedure
+
+Use this when native Codex review is unavailable: quota exhausted, trigger workflow fires but no review arrives after the 10-minute wait window, or the GitHub/Codex integration is down.
+
+**When to use:** Only after the normal label-triggered workflow has been attempted and failed or is known to be unavailable. This is a fallback, not a replacement.
+
+**How to request a manual review:**
+1. Use ChatGPT with the GitHub integration (or any equivalent tool) to review the PR diff.
+2. Provide the relevant review prompt from `.github/prompts/` (software-review.md, methodology-review.md, or red-team-review.md).
+3. Ask the reviewer to begin its response with the standard heading (`## Software Review`, `## Methodology Review`, or `## Red Team Review`) so the artifact matches repo conventions.
+
+**How to record it:**
+1. Post a PR comment noting that fallback review was used and why (e.g., "Codex quota exhausted").
+2. State which review type(s) it covers.
+3. Include the full review text in the comment, or a durable link to it.
+
+**How to handle findings:** Exactly the same as the normal workflow — every finding gets an explicit reply (agree and fix, disagree with evidence, or defer with reason). Merge-blocking criteria are unchanged.
+
+**What fallback review does NOT replace:** Required CI checks and the normal Codex-label workflow when that workflow is available. Always attempt the normal path first.
+
 ### Reporting to the user
 
 After responding to all reviews, give the user a concise summary:

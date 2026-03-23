@@ -69,7 +69,9 @@ Short version:
 7. Reply to every finding, resolve every review thread
 8. Do not merge while merge-blocking findings (**bug**, **leakage**, **silent wrong answer**) remain unaddressed
 
-See `docs/maintainer.md` for the full operating procedure, investigation commands, and merge criteria.
+If native Codex review is unavailable (quota, outage), follow the fallback procedure in `docs/maintainer.md`.
+
+See `docs/maintainer.md` for the full operating procedure, investigation commands, merge criteria, and fallback review process.
 
 ## Configuration
 
