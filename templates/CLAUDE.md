@@ -58,48 +58,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This workflow is **mandatory** for every PR. Do not skip any step.
 
-### Step 1: Open the PR and apply labels
+Short version:
 
-When you open or materially update a pull request:
+1. Create or link a GitHub issue first
+2. Open a PR from a feature branch
+3. Always apply `codex-software-review`
+4. Also apply `codex-methodology-review` when changes touch {{METHODOLOGY_PATHS}}
+5. Also apply `codex-red-team-review` when changes touch {{RED_TEAM_PATHS}}
+6. Monitor for the actual Codex review output
+7. Reply to every finding, resolve every review thread
+8. Do not merge while merge-blocking findings (**bug**, **leakage**, **silent wrong answer**) remain unaddressed
 
-1. Always add the label `codex-software-review`.
-2. If changes touch {{METHODOLOGY_PATHS}}, also add `codex-methodology-review`.
-3. If changes touch {{RED_TEAM_PATHS}}, also add `codex-red-team-review`.
-4. Do not manually paste large review prompts into the PR unless explicitly asked.
-5. Let GitHub workflows trigger Codex review comments from the saved prompt files in `.github/prompts/`.
-
-### Step 2: Monitor for Codex reviews
-
-After opening the PR and applying labels, **you must proactively monitor for Codex review completion**. Do not wait for the user to ask.
-
-1. Inform the user that you are monitoring for Codex reviews.
-2. Poll the PR comments every 60 seconds for new comments from `chatgpt-codex-connector` or containing Codex review content.
-3. Codex reviews typically arrive within 2-5 minutes. Continue polling for up to 10 minutes.
-4. Once all expected reviews have arrived (one per label applied), proceed to Step 3.
-5. If reviews have not arrived after 10 minutes, inform the user and ask how to proceed.
-
-### Step 3: Respond to each review finding
-
-For **every finding** in every Codex review, post a reply comment on the PR responding in one of three categories:
-
-- **Agree and fix**: Make the code change, push it, and note what you fixed in the reply.
-- **Disagree with evidence**: Explain why the finding is incorrect, citing specific code, tests, or design decisions.
-- **Defer with reason**: Acknowledge the concern but explain why it is out of scope for this PR.
-
-Group your responses into a single comment per review. Every finding must be addressed — do not silently skip any.
-
-### Merge-blocking criteria
-
-Do not merge the PR if any finding classified as **bug**, **leakage**, or **silent wrong answer** remains unaddressed (neither fixed nor disagreed-with-evidence). Findings classified as **nit**, **design concern**, or **methodology concern** do not block merge unless escalated by the user.
-
-### Step 4: Report to the user
-
-After responding to all reviews, give the user a concise summary:
-- How many findings per review type
-- What you agreed and fixed
-- What you disagreed with and why
-- What you deferred
-- Whether any merge-blocking findings remain
+See `docs/maintainer.md` for the full operating procedure, investigation commands, and merge criteria.
 
 ## Configuration
 

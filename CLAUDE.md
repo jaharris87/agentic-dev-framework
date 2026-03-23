@@ -18,7 +18,9 @@ Why: The scaffolding session has no test infrastructure, no CI, and no PR review
 - Gathering requirements and creating a plan
 - Running `init-project.sh` and filling in templates (CLAUDE.md, AGENTS.md, CI, prompts, settings)
 - Writing project-specific configuration files (CMakeLists.txt, pyproject.toml, Cargo.toml, etc.)
+- Writing minimal placeholder source files needed to make the scaffold compile (stub modules, empty main files) — but no real logic
 - Initializing git, creating the GitHub repo, pushing the scaffolding
+- Verifying Phase 0: the scaffold configures, builds, and passes a smoke test before handoff
 - Creating the handoff artifact (TODO.md) with implementation phases from the plan
 - Guiding the user through manual setup steps
 
@@ -47,21 +49,31 @@ The primary use case: a user starts a `claude` session from this directory and a
 2. **Create the project directory** at the location they specify (or ask where).
 3. **Run `scripts/init-project.sh`** to copy the template scaffolding.
 4. **Fill in all `{{PLACEHOLDER}}` values** in CLAUDE.md and AGENTS.md based on the gathered requirements.
-5. **Customize the CI workflow** (`.github/workflows/ci.yml`) for the project's language and toolchain.
+5. **Customize the CI workflow** (`.github/workflows/ci.yml`) for the project's language and toolchain. Verify the lint job covers all maintained source directories (`src/`, `tests/`, `examples/`, etc.), not just `src/`.
 6. **Customize the review prompts** (`.github/prompts/`) for the project's domain. Use the methodology customization hints below.
 7. **Set up `.claude/settings.json`** with project-specific permissions (see the inheritance note in the template).
 8. **Initialize git**, create the GitHub repo, create labels, and push.
-9. **Create handoff artifact** — Fill in `TODO.md` with implementation phases derived from the plan. Each phase should have checkboxes for discrete work items. Optionally also create GitHub issues for major phases.
-10. **Guide the user** through any manual steps (PAT creation, repo secret) and instruct them to start a new `claude` session from the project directory for implementation.
+9. **Verify Phase 0** — Before handoff, confirm the scaffold is a truthful executable baseline:
+   - Configure and build succeed locally (e.g., `cmake -B build && cmake --build build`)
+   - A smoke test passes (even if trivial — "it linked and ran without crashing")
+   - CI is green on the first push (check the Actions tab or `gh run list`)
+   - If the build system references source files, those files must exist as compilable stubs
+   - Do NOT claim support for toolchains, build paths, or features that are not exercised in CI
+
+   Why: An impressive-looking scaffold that doesn't actually build is worse than no scaffold. Feature work on top of an untrustworthy baseline wastes the implementation session's time fixing build issues instead of doing TDD. The second fTimer trial demonstrated this — PRs #2 had to fix the scaffold before Phase 1 could start.
+
+10. **Create handoff artifact** — Fill in `TODO.md` with implementation phases derived from the plan. Each phase should have checkboxes for discrete work items. Optionally also create GitHub issues for major phases.
+11. **Guide the user** through any manual steps (PAT creation, repo secret) and instruct them to start a new `claude` session from the project directory for implementation.
 
 ### When filling in templates
 
 - **CLAUDE.md**: Write it as if you are the future Claude Code agent that will work on this project. Include exact build/test/lint commands, architecture description, and the full PR review workflow. The Development Workflow and PR Review Workflow sections are already filled in with the standard process — customize paths for label triggers.
 - **AGENTS.md**: Write project-specific risks that Codex should focus on. Generic risks are useless. Think about: what are the ways THIS project could fail silently?
-- **CI workflow**: Replace the placeholder steps with the project's actual toolchain. This could be Python + uv, CMake + CTest, Make + Fortran compilers, npm + jest, cargo + clippy — whatever the project uses.
+- **CI workflow**: Replace the placeholder steps with the project's actual toolchain. This could be Python + uv, CMake + CTest, Make + Fortran compilers, npm + jest, cargo + clippy — whatever the project uses. Only include build system config files (fpm.toml, pyproject.toml, etc.) for toolchains that are actually exercised in CI. If a secondary build path is aspirational, do not create its config file during scaffolding — add it as a TODO.md item for a later phase. Claiming support for a build path that isn't tested is a lie.
 - **Review prompts**: The software and red-team prompts are mostly universal. The methodology prompt should be customized for the project's domain using the hints below, or removed if not applicable.
 - **`.claude/settings.json`**: Project-level settings layer on top of global settings (`~/.claude/settings.json`). Only add permissions specific to this project's toolchain — global permissions (git, ls, common tools) are already inherited. For example, a Python project might add `"Bash(pytest *)"` and `"Bash(ruff *)"`. A Rust project might add `"Bash(cargo test *)"`. The template starts with just `WebSearch`; expand it based on the project's language and build tools.
-- **TODO.md**: This is the handoff artifact. Translate the plan's implementation order into concrete phases with checkboxes. Each phase should map to 1–3 sessions of work. Include enough context that a fresh session (with no knowledge of the plan) can pick up each phase and know what to build, what to test, and what order to do it in. If the plan exists in `.claude/plans/`, reference it — but TODO.md must be self-contained since the new session runs from a different directory.
+- **TODO.md**: This is the handoff artifact. Translate the plan's implementation order into concrete phases with checkboxes. Phase 0 (truthful executable baseline) should be checked off by the scaffolding session before handoff. Each subsequent phase should map to 1–3 sessions of work. Include enough context that a fresh session (with no knowledge of the plan) can pick up each phase and know what to build, what to test, and what order to do it in. If the plan exists in `.claude/plans/`, reference it — but TODO.md must be self-contained since the new session runs from a different directory.
+- **Current vs target documentation**: If the scaffold includes placeholder modules or stub APIs, all documentation must distinguish what `main` does today from what later phases will add. This applies to CLAUDE.md (Development Workflow section should state the current phase), README (separate "Current Behavior" from "Target Capabilities"), and any design/semantics docs (mark as forward-looking targets, not current contracts). A scaffold that looks fully implemented in docs but is actually stubs is a lie that wastes the implementation session's time. The second fTimer trial demonstrated this — PRs #6 and #10 had to retroactively separate current behavior from target design.
 
 ### Language/toolchain patterns
 
@@ -129,7 +141,7 @@ When filling in the template CLAUDE.md, consider including guidance for these Cl
 - **`/compact`**: Compresses conversation history when approaching context limits. Important for long implementation sessions.
 - **Worktrees**: Isolated git worktrees for parallel work streams. Useful when the builder needs to work on multiple features simultaneously.
 - **`claude --print`**: Non-interactive mode for scripted automation (e.g., pre-commit checks, CI integration).
-- **Context window management**: Keep CLAUDE.md lean — move reference material to separate files that Claude can read on demand rather than loading at every session start. If CLAUDE.md exceeds ~200 lines, consider splitting into `CLAUDE.md` (essentials) + `docs/` (reference).
+- **Context window management**: CLAUDE.md is for coding-time behavior: build/test/lint commands, architecture, active workflow constraints, and a short mandatory PR summary. Long-form operational procedures (label setup, PAT creation, Codex monitoring details, merge criteria, investigation commands) go in `docs/maintainer.md`. If CLAUDE.md exceeds ~200 lines, it's too long — split aggressively. The PR Review Workflow section in CLAUDE.md should be a short summary with a pointer to `docs/maintainer.md` for the full procedure.
 
 ## Files in This Repo
 
@@ -146,6 +158,8 @@ templates/                      # Copied into new projects
 │       ├── software-review.md  # Software review prompt
 │       ├── methodology-review.md  # Methodology review prompt (optional)
 │       └── red-team-review.md  # Red team review prompt
+├── docs/
+│   └── maintainer.md           # Full PR/review/ops procedures (keeps CLAUDE.md lean)
 ├── .claude/
 │   └── settings.json           # Project permissions template
 ├── hooks/
