@@ -6,6 +6,31 @@ This file provides guidance to Claude Code when working in this repository.
 
 **agentic-dev-framework** is a project scaffolding framework. It contains templates, scripts, and conventions for setting up multi-agent development workflows (Claude Code as builder, Codex as adversarial reviewer, GitHub Actions as orchestrator) on any GitHub project.
 
+## Scope Boundary — What This Session Must and Must Not Do
+
+**This session scaffolds. A separate session builds.**
+
+When a user asks you to create a new project, your job is strictly limited to setting up the project skeleton and handing off. You must NOT write any implementation code (source files, test implementations, library logic). All implementation happens in a separate `claude` session running from the new project's directory, following that project's CLAUDE.md and TDD workflow.
+
+Why: The scaffolding session has no test infrastructure, no CI, and no PR review loop. Writing implementation code here bypasses every quality gate this framework exists to enforce. The first trial run (fTimer) demonstrated this failure mode — ~2000 lines of implementation were written without TDD, without CI, and without review.
+
+**Allowed in this session:**
+- Gathering requirements and creating a plan
+- Running `init-project.sh` and filling in templates (CLAUDE.md, AGENTS.md, CI, prompts, settings)
+- Writing project-specific configuration files (CMakeLists.txt, pyproject.toml, Cargo.toml, etc.)
+- Initializing git, creating the GitHub repo, pushing the scaffolding
+- Creating the handoff artifact (TODO.md) with implementation phases from the plan
+- Guiding the user through manual setup steps
+
+**NOT allowed in this session:**
+- Writing source code (`src/`, `lib/`, `app/`, etc.)
+- Writing test implementations (only test directory structure and build config)
+- Debugging compiler/runtime errors in implementation code
+- Running the project's test suite against implementation code
+- Any work that belongs in the TDD build loop
+
+If you find yourself writing a function body, stop. That belongs in the next session.
+
 ## How to Use This Repo
 
 The primary use case: a user starts a `claude` session from this directory and asks you to create a new project. Your job is to:
@@ -26,7 +51,8 @@ The primary use case: a user starts a `claude` session from this directory and a
 6. **Customize the review prompts** (`.github/prompts/`) for the project's domain. Use the methodology customization hints below.
 7. **Set up `.claude/settings.json`** with project-specific permissions (see the inheritance note in the template).
 8. **Initialize git**, create the GitHub repo, create labels, and push.
-9. **Guide the user** through any manual steps (PAT creation, repo secret).
+9. **Create handoff artifact** — Fill in `TODO.md` with implementation phases derived from the plan. Each phase should have checkboxes for discrete work items. Optionally also create GitHub issues for major phases.
+10. **Guide the user** through any manual steps (PAT creation, repo secret) and instruct them to start a new `claude` session from the project directory for implementation.
 
 ### When filling in templates
 
@@ -35,6 +61,7 @@ The primary use case: a user starts a `claude` session from this directory and a
 - **CI workflow**: Replace the placeholder steps with the project's actual toolchain. This could be Python + uv, CMake + CTest, Make + Fortran compilers, npm + jest, cargo + clippy — whatever the project uses.
 - **Review prompts**: The software and red-team prompts are mostly universal. The methodology prompt should be customized for the project's domain using the hints below, or removed if not applicable.
 - **`.claude/settings.json`**: Project-level settings layer on top of global settings (`~/.claude/settings.json`). Only add permissions specific to this project's toolchain — global permissions (git, ls, common tools) are already inherited. For example, a Python project might add `"Bash(pytest *)"` and `"Bash(ruff *)"`. A Rust project might add `"Bash(cargo test *)"`. The template starts with just `WebSearch`; expand it based on the project's language and build tools.
+- **TODO.md**: This is the handoff artifact. Translate the plan's implementation order into concrete phases with checkboxes. Each phase should map to 1–3 sessions of work. Include enough context that a fresh session (with no knowledge of the plan) can pick up each phase and know what to build, what to test, and what order to do it in. If the plan exists in `.claude/plans/`, reference it — but TODO.md must be self-contained since the new session runs from a different directory.
 
 ### Language/toolchain patterns
 
@@ -110,6 +137,7 @@ When filling in the template CLAUDE.md, consider including guidance for these Cl
 templates/                      # Copied into new projects
 ├── CLAUDE.md                   # Builder agent instructions
 ├── AGENTS.md                   # Reviewer agent context
+├── TODO.md                     # Implementation handoff (phases + checkboxes)
 ├── .github/
 │   ├── workflows/
 │   │   ├── ci.yml              # CI pipeline (language-agnostic template)
