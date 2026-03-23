@@ -25,7 +25,7 @@ Why: The scaffolding session has no test infrastructure, no CI, and no PR review
 - Guiding the user through manual setup steps
 
 **NOT allowed in this session:**
-- Writing source code (`src/`, `lib/`, `app/`, etc.)
+- Writing implementation logic in source files (stubs that compile but contain no real behavior are OK; function bodies with real logic are not)
 - Writing test implementations (only test directory structure and build config)
 - Debugging compiler/runtime errors in implementation code
 - Running the project's test suite against implementation code
