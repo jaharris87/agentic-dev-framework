@@ -11,7 +11,7 @@ This document covers the full operational procedures for working on this reposit
 3. Always apply the `codex-software-review` label.
 4. If the diff touches {{METHODOLOGY_PATHS}}, also apply `codex-methodology-review`.
 5. If the diff touches {{RED_TEAM_PATHS}}, also apply `codex-red-team-review`.
-6. Do not manually paste review prompts into the PR body. The `.github/workflows/codex-review.yml` workflow posts the saved prompts from `.github/prompts/` automatically when labels are applied.
+6. Do not manually paste review prompts into the PR body. The `.github/workflows/codex-review.yml` workflow posts condensed one-liner prompts from `.github/prompts/` automatically when labels are applied. (Codex ignores multi-line `@codex review` instructions.)
 
 ### Monitoring for Codex reviews
 
@@ -70,7 +70,7 @@ Use this when native Codex review is unavailable: quota exhausted, trigger workf
 
 **How to request a manual review:**
 1. Use ChatGPT with the GitHub integration (or any equivalent tool) to review the PR diff.
-2. Provide the relevant review prompt from `.github/prompts/` (software-review.md, methodology-review.md, or red-team-review.md).
+2. Provide the relevant **detailed** review prompt from `.github/prompts/detailed/` (software-review.md, methodology-review.md, or red-team-review.md). These are the full multi-section prompts — use these for manual reviews, not the condensed one-liners in `.github/prompts/`.
 3. Ask the reviewer to begin its response with the standard heading (`## Software Review`, `## Methodology Review`, or `## Red Team Review`) so the artifact matches repo conventions.
 
 **How to record it:**

@@ -151,7 +151,7 @@ Replace all `{{PLACEHOLDER}}` values in:
 - **CLAUDE.md** — Builder agent instructions. Include exact build/test/lint commands, architecture, and the PR review workflow with label trigger paths customized for your project.
 - **AGENTS.md** — Reviewer agent context. Write project-specific risks. Generic risks are useless; specific failure modes are gold.
 - **.github/workflows/ci.yml** — Replace placeholder steps with your actual toolchain.
-- **.github/prompts/** — Customize the methodology review for your domain, or remove it if not applicable.
+- **.github/prompts/** — Condensed one-liner prompts for `@codex review` triggers (Codex ignores multi-line instructions). Customize the methodology one-liner for your domain, or remove it. Full detailed prompts are in `.github/prompts/detailed/` for fallback/manual reviews.
 
 ### Step 3: Create the PAT and labels
 
@@ -255,7 +255,7 @@ Keep CLAUDE.md lean. If it exceeds ~200 lines, move reference material (API docs
 
 ### Adding a new review type
 
-1. Create `.github/prompts/your-review.md` with the prompt
+1. Create `.github/prompts/your-review.md` with a condensed one-liner prompt (Codex ignores multi-line `@codex review` instructions). Optionally also create `.github/prompts/detailed/your-review.md` with the full prompt for fallback/manual reviews.
 2. Add a job to `.github/workflows/codex-review.yml` (copy an existing job, change the label name and prompt file)
 3. Run `gh label create "codex-your-review" --description "..." --color "..."`
 4. Update CLAUDE.md Step 1 with when to apply the new label
@@ -299,9 +299,13 @@ templates/
 │   │   ├── ci.yml                         # CI pipeline (language-agnostic)
 │   │   └── codex-review.yml              # Codex review triggers
 │   └── prompts/
-│       ├── software-review.md             # Software review prompt
-│       ├── methodology-review.md          # Methodology review prompt (optional)
-│       └── red-team-review.md             # Red team review prompt
+│       ├── software-review.md             # One-liner Codex trigger prompt
+│       ├── methodology-review.md          # One-liner Codex trigger prompt (optional)
+│       ├── red-team-review.md             # One-liner Codex trigger prompt
+│       └── detailed/                      # Full prompts for fallback/manual reviews
+│           ├── software-review.md
+│           ├── methodology-review.md
+│           └── red-team-review.md
 ├── .claude/
 │   └── settings.json                      # Project permissions template
 ├── hooks/
