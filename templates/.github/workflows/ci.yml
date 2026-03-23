@@ -39,7 +39,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      # TODO: Add your linter and formatter checks
+      # TODO: Add your linter and formatter checks.
+      # IMPORTANT: Cover ALL maintained source directories, not just src/.
+      # Common directories to lint: src/, tests/, examples/, scripts/, docs/.
+      # Missing a directory here means formatting drift goes undetected.
       # - run: ...
 
   test:
