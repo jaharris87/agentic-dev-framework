@@ -169,4 +169,9 @@ templates/                      # Copied into new projects
 scripts/
 ├── init-project.sh             # Copy templates into a new project
 └── create-labels.sh            # Create GitHub review labels
+
+.claude/skills/                 # Claude Code skills (this repo only)
+├── scaffold/SKILL.md           # Auto: full project scaffolding workflow
+├── handoff/SKILL.md            # Auto: generate TODO.md + GitHub issues from plan
+└── review-pr/SKILL.md          # Manual: PR review monitoring + response (/review-pr)
 ```
