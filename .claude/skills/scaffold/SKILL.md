@@ -37,7 +37,7 @@ Replace all `{{PLACEHOLDER}}` values in:
 - **CLAUDE.md** — Write as the future builder agent. Include exact build/test/lint commands, architecture, and the short PR review summary. Keep it under ~200 lines; move operational details to `docs/maintainer.md`.
 - **AGENTS.md** — Project-specific risks. Generic risks are useless.
 - **CI workflow** — Replace placeholder jobs with the project's actual toolchain. Only include build config files for toolchains exercised in CI. Verify lint covers all source directories (src/, tests/, examples/).
-- **Review prompts** — Customize methodology-review.md for the project's domain, or remove it if not applicable. See CLAUDE.md's domain table.
+- **Review prompts** — The prompts in `.github/prompts/` are condensed one-liners (Codex ignores multi-line `@codex review` instructions). Replace the default ML methodology one-liner with a domain-appropriate one-liner using CLAUDE.md's domain table. Full detailed prompts in `.github/prompts/detailed/` are for fallback/manual reviews.
 - **docs/maintainer.md** — Fill in owner/repo, methodology/red-team paths, CI details.
 - **.claude/settings.json** — Add project-specific tool permissions.
 

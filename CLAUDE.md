@@ -50,7 +50,7 @@ The primary use case: a user starts a `claude` session from this directory and a
 3. **Run `scripts/init-project.sh`** to copy the template scaffolding.
 4. **Fill in all `{{PLACEHOLDER}}` values** in CLAUDE.md and AGENTS.md based on the gathered requirements.
 5. **Customize the CI workflow** (`.github/workflows/ci.yml`) for the project's language and toolchain. Verify the lint job covers all maintained source directories (`src/`, `tests/`, `examples/`, etc.), not just `src/`.
-6. **Customize the review prompts** (`.github/prompts/`) for the project's domain. Use the methodology customization hints below.
+6. **Customize the review prompts** (`.github/prompts/`) for the project's domain. These are condensed one-liners for `@codex review` triggers (Codex ignores multi-line custom instructions). Replace the default ML methodology one-liner with a domain-appropriate one using the hints below. Full detailed prompts are preserved in `.github/prompts/detailed/` for fallback/manual reviews.
 7. **Set up `.claude/settings.json`** with project-specific permissions (see the inheritance note in the template).
 8. **Initialize git**, create the GitHub repo, create labels, and push.
 9. **Verify Phase 0** — Before handoff, confirm the scaffold is a truthful executable baseline:
@@ -93,7 +93,7 @@ When setting up CI for different ecosystems:
 
 ### Methodology prompt customization by domain
 
-When customizing `.github/prompts/methodology-review.md`, replace the ML-focused Required Questions and What to Look For sections with domain-appropriate concerns:
+When customizing `.github/prompts/methodology-review.md`, replace the default ML one-liner with a domain-appropriate one-liner. The prompt must stay condensed (Codex ignores multi-line `@codex review` instructions). Use the domain table below for focus areas — condense them into a single sentence:
 
 | Domain | Replace ML Questions With |
 |--------|--------------------------|
@@ -155,9 +155,13 @@ templates/                      # Copied into new projects
 │   │   ├── ci.yml              # CI pipeline (language-agnostic template)
 │   │   └── codex-review.yml   # Codex review triggers
 │   └── prompts/
-│       ├── software-review.md  # Software review prompt
-│       ├── methodology-review.md  # Methodology review prompt (optional)
-│       └── red-team-review.md  # Red team review prompt
+│       ├── software-review.md      # One-liner Codex trigger prompt
+│       ├── methodology-review.md   # One-liner Codex trigger prompt (optional)
+│       ├── red-team-review.md      # One-liner Codex trigger prompt
+│       └── detailed/               # Full prompts for fallback/manual reviews
+│           ├── software-review.md
+│           ├── methodology-review.md
+│           └── red-team-review.md
 ├── docs/
 │   └── maintainer.md           # Full PR/review/ops procedures (keeps CLAUDE.md lean)
 ├── .claude/

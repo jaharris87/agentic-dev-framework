@@ -50,7 +50,7 @@ Look for comments from `chatgpt-codex-connector` or comments beginning with `## 
 - Once all expected reviews have arrived, proceed to Step 4.
 - If reviews haven't arrived after 10 minutes, inform the user and ask how to proceed. Options:
   - Continue waiting
-  - Use fallback review (manual ChatGPT review — see `docs/maintainer.md`)
+  - Use fallback review (manual ChatGPT review with detailed prompts from `.github/prompts/detailed/` — see `docs/maintainer.md`)
   - Skip review (user's call, not recommended)
 
 ## Step 4: Analyze and Respond to Findings

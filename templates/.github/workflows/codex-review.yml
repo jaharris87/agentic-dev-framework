@@ -3,6 +3,11 @@ name: Codex Review Triggers
 # This workflow does NOT call any AI API. It posts @codex review comments
 # which trigger native Codex GitHub review via your ChatGPT-linked account.
 #
+# The review prompts in .github/prompts/ are condensed one-liners because
+# Codex @review triggers appear to ignore multi-line custom instructions.
+# Full detailed prompts are preserved in .github/prompts/detailed/ for
+# manual/fallback reviews (e.g., via ChatGPT with GitHub integration).
+#
 # Prerequisites:
 #   1. Create a fine-grained PAT with pull-requests:write on this repo
 #   2. Add it as a repository secret named CODEX_TRIGGER_PAT
